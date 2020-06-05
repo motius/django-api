@@ -1,0 +1,9 @@
+# These files will not be copied to the Docker app container
+.git/
+.cache/
+.idea/
+env/
+.coverage
+__pycache__
+*.pyc
+Dockerfile
