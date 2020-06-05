@@ -10,7 +10,7 @@ build:
     useBuildkit: true
     push: true
   artifacts:
-  - image: registry.motius.de/blueprints/django-api
+  - image: 127.0.0.1:5000/django-api
     docker:
       dockerfile: containers/app/Dockerfile
     sync:
@@ -18,7 +18,18 @@ build:
         - "**/*"
         - "*"
 
+# Custom port forwards
+portForward:
+- resourceType: deployment
+  resourceName: app
+  namespace: django-kustomize
+  port: 8000
+- resourceType: deployment
+  resourceName: db
+  namespace: django-kustomize
+  port: 5432
+
 deploy:
   kustomize:
     paths:
-    - "k8s/overlays/minikube"
+    - "k8s/kustomize/overlays/minikube"
