@@ -1,0 +1,36 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "django.fullname" . -}}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-django
+  labels:
+    {{- include "django.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: django-tls
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: "/"
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: django
+          - path: "/media"
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: nginx
+          - path: "/static"
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: nginx
+{{- end }}

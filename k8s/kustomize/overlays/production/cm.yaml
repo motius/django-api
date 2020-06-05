@@ -1,0 +1,17 @@
+---
+# Database base config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-example-db-config
+data:
+  BITNAMI_DEBUG: "false"
+
+---
+# App base Config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-example-config
+data:
+  SITE_URL: django-api.apps.moti.us

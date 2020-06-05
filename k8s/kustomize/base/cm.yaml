@@ -1,0 +1,29 @@
+---
+# App base Config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-example-config
+data:
+  PYTHONUNBUFFERED: "1"
+  DB_HOST: django-example-db
+  DB_PORT: "5432"
+  DB_USER: postgres
+  DB_NAME: postgres
+  DJANGO_SETTINGS_MODULE: apps.core.settings.staging
+
+---
+# Database base config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-example-db-config
+data:
+  BITNAMI_DEBUG: "true"
+  POSTGRESQL_PORT_NUMBER: "5432"
+  POSTGRESQL_VOLUME_DIR: /bitnami/postgresql
+  PGDATA: /bitnami/postgresql/data
+  POSTGRES_USER: postgres
+  POSTGRES_DB: django
+  POSTGRESQL_ENABLE_LDAP: "no"
+

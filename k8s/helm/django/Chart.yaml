@@ -1,0 +1,16 @@
+apiVersion: v2
+
+# Chart Metadata
+name: django
+description: Template helm chart for the presentation on Kubernetes Deployments
+version: 1.0.0
+appVersion: 1.0.0
+
+dependencies:
+- name: postgresql
+  version: 8.10.4
+  repository: https://charts.bitnami.com/bitnami
+  condition: postgresql.install
+
+# Helm information
+type: application

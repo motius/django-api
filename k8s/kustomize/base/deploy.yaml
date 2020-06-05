@@ -1,0 +1,145 @@
+---
+# App
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: app
+  name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: app
+    spec:
+      initContainers:
+      # Run Database Migrations
+      - name: init-db
+        image: registry.motius.de/blueprints/django-api:latest
+        imagePullPolicy: Always
+        command: ["sh", "-c", "python3 manage.py db_entrypoint"]
+        env:
+        - name: DB_PW
+          valueFrom:
+            secretKeyRef:
+              name: django-example-db
+              key: password
+        envFrom:
+        - configMapRef:
+            name: django-example-config
+      # Collect static files
+      - name: collect-static
+        image: registry.motius.de/blueprints/django-api:latest
+        imagePullPolicy: Always
+        command: ["sh", "-c", "python3 manage.py collectstatic --no-input"]
+        volumeMounts:
+        - mountPath: /usr/src/app/static
+          name: static-storage
+      containers:
+      - name: app
+        image: registry.motius.de/blueprints/django-api:latest
+        imagePullPolicy: Always
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+        env:
+        - name: DB_PW
+          valueFrom:
+            secretKeyRef:
+              name: django-example-db
+              key: password
+        envFrom:
+        - configMapRef:
+            name: django-example-config
+        # Copied from kompose
+        livenessProbe:
+          exec:
+            command:
+            - curl
+            - -f
+            - http://localhost:8000/status/?format=json
+          failureThreshold: 3
+          periodSeconds: 10
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /usr/src/app/media
+          name: media-storage
+        - mountPath: /usr/src/app/static
+          name: static-storage
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250m
+      restartPolicy: Always
+      volumes:
+      - emptyDir: {}
+        name: static-storage
+      - emptyDir: {}
+        name: media-storage
+
+---
+# Database
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: db
+  name: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: db
+    spec:
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - |
+          mkdir -p /bitnami/postgresql/data
+          chmod 700 /bitnami/postgresql/data
+          chown -R 1001:1001 /bitnami/postgresql
+        image: "docker.io/bitnami/minideb:stretch"
+        imagePullPolicy: Always
+        name: init-chmod-data
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /bitnami/postgresql
+          name: db
+      containers:
+      - name: db
+        image: bitnami/postgresql:12
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: django-example-db
+        envFrom:
+        - configMapRef:
+            name: django-example-db-config # Create by kustomize
+        volumeMounts:
+        - mountPath: /bitnami/postgresql
+          name: db
+      restartPolicy: Always
+      volumes:
+      - name: db
+        persistentVolumeClaim:
+          claimName: django-example-db-pvc
+status: {}

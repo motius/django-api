@@ -1,0 +1,26 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: app
+spec:
+  rules:
+  - host: django-api.apps.moti.us
+    http:
+      paths:
+      - backend:
+          serviceName: django-example-app-svc
+          servicePort: http
+  - host: django-api.apps.moti.us
+    http:
+      paths:
+      - backend:
+          serviceName: django-example-nginx-svc
+          servicePort: http
+        path: /media
+  - host: django-api.apps.moti.us
+    http:
+      paths:
+      - backend:
+          serviceName: django-example-nginx-svc
+          servicePort: http
+        path: /static

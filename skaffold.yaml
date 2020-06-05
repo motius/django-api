@@ -1,0 +1,24 @@
+apiVersion: skaffold/v2beta3
+kind: Config
+metadata:
+  name: django-api
+
+build:
+  tagPolicy:
+    sha256: {}
+  local:
+    useBuildkit: true
+    push: true
+  artifacts:
+  - image: registry.motius.de/blueprints/django-api
+    docker:
+      dockerfile: containers/app/Dockerfile
+    sync:
+      infer:
+        - "**/*"
+        - "*"
+
+deploy:
+  kustomize:
+    paths:
+    - "k8s/overlays/minikube"

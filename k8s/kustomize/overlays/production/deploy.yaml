@@ -1,0 +1,71 @@
+---
+# App
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: app
+  name: app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: app
+  template:
+    spec:
+      initContainers:
+      - name: init-db
+        env:
+        - name: DB_PW
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: django-example-db-production
+      containers:
+      - name: app
+        command: ["sh", "-c", "gunicorn apps.core.wsgi -b 0.0.0.0:8000 --timeout 300 --workers=8"]
+        env:
+        - name: DB_PW
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: django-example-db-production
+      # NGINX Sidecar
+      - name: nginx-sidecar
+        image: nginx:alpine
+        securityContext:
+          runAsUser: 0
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /usr/share/nginx/html/static
+          name: static-storage
+        - mountPath: /usr/share/nginx/html/media
+          name: media-storage
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250m
+      imagePullSecrets:
+      - name: registry.motius.de
+
+---
+# Database
+apiVersion: apps/v1
+kind: Deployment!
+metadata:
+  labels:
+    app.kubernetes.io/instance: db
+  name: db
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: db
+  template:
+    spec:
+      containers:
+      - name: db
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: django-example-db-production

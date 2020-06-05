@@ -1,0 +1,25 @@
+---
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+
+releases:
+  ###################################################################################################################
+  # This is the template part of the Helmfile, the configuration needed for the Deployment
+  # Check the Gitlab provided variables for more information:
+  #     https://docs.gitlab.com/ee/ci/variables/
+  ###################################################################################################################
+  - name: 'django-helm' # The deployed version (e.g. master)
+    namespace: 'django-helm' # Which namespace to deploy to (e.g. default)
+    chart: "../helm/django"
+    version: 1.0.0
+    atomic: true
+    wait: true
+    timeout: 600
+    values:
+      - image:
+          registry: localhost:5000
+          image: django-api
+      - ingress:
+          enabled: true
+          host: django-helm.minikube.local

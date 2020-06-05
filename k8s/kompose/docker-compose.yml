@@ -1,0 +1,51 @@
+version: '3'
+# Optimized for minikube
+#   > docker-compose config | kompose convert --stdout -f - | kubectl apply -f -
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: ./containers/app/Dockerfile
+    image: 127.0.0.1:5000/django-api
+    environment:
+      - DB_HOST
+      - DB_NAME
+      - DB_PW
+      - DB_USER
+      - DB_PORT
+      - DJANGO_SETTINGS_MODULE
+      - SITE_URL=django-kompose.minikube.local
+    depends_on:
+    - db
+    ports:
+    - 8000:8000
+    volumes:
+    - media:/usr/src/app/media
+    - static:/usr/src/app/static
+    labels:
+      kompose.service.expose: "django-kompose.minikube.local"
+      kompose.controller.type: "deployment"
+      kompose.volume.size: "1Gi"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/status/?format=json"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: bitnami/postgresql:12
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PW}
+      - POSTGRES_USER=${DB_USER}
+    expose:
+    - 5432
+    volumes:
+    - db:/bitnami/postgresql
+    labels:
+      kompose.volume.size: "1Gi"
+
+volumes:
+  static:
+  media:
+  db:

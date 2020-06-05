@@ -1,0 +1,16 @@
+---
+# App base Config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "django.fullname" . }}
+  labels:
+    {{- include "django.labels" . | nindent 4 }}
+data:
+  PYTHONUNBUFFERED: "1"
+  DB_HOST: {{ include "django.fullname" . }}-postgresql
+  DB_PORT: "5432"
+  SITE_URL: "{{ .Values.ingress.host }}"
+  DB_USER: "{{ .Values.postgresql.postgresqlUsername }}"
+  DB_NAME: "{{ .Values.postgresql.postgresqlDatabase }}"
+  DJANGO_SETTINGS_MODULE: apps.core.settings.staging

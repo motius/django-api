@@ -1,0 +1,17 @@
+
+commonLabels:
+  app.kubernetes.io/name: django-example
+  app.kubernetes.io/version: development
+
+nameSuffix: -production
+
+resources:
+  - ing.yaml
+
+patchesStrategicMerge:
+- cm.yaml
+- deploy.yaml
+
+bases:
+  - ../../base
+

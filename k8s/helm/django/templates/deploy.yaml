@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "django.fullname" . }}
+  labels:
+    {{- include "django.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "django.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "django.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "django.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        # Run Database Migrations
+        - name: init-db
+          image: "{{ .Values.image.registry }}/{{ .Values.image.image }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          command: ["sh", "-c", "python3 manage.py db_entrypoint"]
+          env:
+          - name: DB_PW
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "django.fullname" . }}-postgresql
+                key: postgresql-password
+          envFrom:
+          - configMapRef:
+              name: {{ include "django.fullname" . }}
+        # Collect static files
+        - name: collect-static
+          image: "{{ .Values.image.registry }}/{{ .Values.image.image }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          command: ["sh", "-c", "python3 manage.py collectstatic --no-input"]
+          volumeMounts:
+          - mountPath: /usr/src/app/static
+            name: static-storage
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.image }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          command: ["sh", "-c", "gunicorn apps.core.wsgi -b 0.0.0.0:8000 --timeout 300 --workers=8"]
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+          - name: DB_PW
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "django.fullname" . }}-postgresql
+                key: postgresql-password
+          envFrom:
+          - configMapRef:
+              name: {{ include "django.fullname" . }}
+          livenessProbe:
+            exec:
+              command:
+              - curl
+              - -f
+              - http://localhost:8000/status/?format=json
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+          - mountPath: /usr/src/app/media
+            name: media-storage
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        # NGINX Sidecar
+        - name: nginx-sidecar
+          image: nginx:alpine
+          securityContext:
+            runAsUser: 0
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          volumeMounts:
+          - mountPath: /usr/share/nginx/html/static
+            name: static-storage
+          - mountPath: /usr/share/nginx/html/media
+            name: media-storage
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.app.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

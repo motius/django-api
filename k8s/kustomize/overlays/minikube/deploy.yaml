@@ -1,0 +1,20 @@
+---
+# App
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: init-db
+        image: 127.0.0.1:5000/django-api:latest
+      # Collect static files
+      - name: collect-static
+        image: 127.0.0.1:5000/django-api:latest
+      containers:
+      - name: app
+        image: 127.0.0.1:5000/django-api:latest
+        command: ["sh", "-c", "python3 manage.py runserver 0.0.0.0:8000"]
+        resources: null # Remove resources for Minikube

@@ -1,0 +1,61 @@
+# This file provides the defaults
+replicaCount: 1
+
+image:
+  registry: registry.motius.de
+  image: blueprints/django-api
+  tag: latest
+  pullPolicy: Always
+  pullSecrets:
+    - name: registry # <- This needs to be created beforehand
+
+app:
+  dbUser: "postgres"
+  dbName: "postgres"
+  settings: "apps.core.settings.staging"
+  mounts:
+    - mountPath: /usr/share/nginx/html/static
+      name: static-storage
+    - mountPath: /usr/share/nginx/html/media
+      name: media-storage
+  volumes:
+    - emptyDir: {}
+      name: static-storage
+    - emptyDir: {}
+      name: media-storage
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: false
+  tls: false
+  annotations: {}
+  host: chart-example.local
+
+# Dependency chart configuration
+postgresql:
+  enable: true
+  postgresqlUsername: postgres
+  postgresqlPassword: postgres
+  postgresqlDatabase: postgres
+  persistence:
+    enabled: false
+
+# Other:
+serviceAccount:
+  create: true
+  name: "example"
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Advanced Topics
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000

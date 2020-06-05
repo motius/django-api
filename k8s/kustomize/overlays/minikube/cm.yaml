@@ -1,0 +1,9 @@
+---
+# App base Config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-example-config
+data:
+  SITE_URL: django-kustomize.minikube.local
+  DJANGO_SETTINGS_MODULE: apps.core.settings.dev
