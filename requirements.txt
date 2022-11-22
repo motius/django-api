@@ -9,6 +9,6 @@ django-import-export==2.0.2  # Updated from 1.2.0
 django-filter==2.2.0  # Updated from 2.1.0
 gunicorn==20.0.4  # Updated from 19.9.0
 psycopg2==2.8.5  # Updated from 2.8.2
-Pillow==7.1.2  # Updated from 6.0.0
+Pillow==9.3.0  # Updated from 6.0.0
 django-cors-headers==3.2.1  # Updated from 3.0.1
 django-health-check==3.12.1
